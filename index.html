@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<meta name="description" content="Evertech Mod Studio v0.7: browser-based EVTS mod editor prototype with multi-mesh export.">
+<title>Evertech Mod Studio v0.7</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brandmark">E</div>
+  <div>
+    <div class="brand-title">Evertech Mod Studio</div>
+    <div class="brand-sub">BROWSER LAB <span style="color:#4c5668">/</span> PROTOTYPE 0.7 MULTI-MESH</div>
+  </div>
+  <div class="top-actions">
+    <span class="local-pill"><span class="dot"></span> Local project · no account</span>
+    <button class="btn" id="newProject"><span>＋</span> New project</button>
+  </div>
+</header>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="nav-label">WORKSPACE</div>
+    <nav class="nav" aria-label="Workspace navigation">
+      <button class="navbtn active" data-page="scene"><span class="nav-icon">◈</span> 3D Scene</button>
+      <button class="navbtn" data-page="materials"><span class="nav-icon">▧</span> Materials</button>
+      <button class="navbtn" data-page="config"><span class="nav-icon">{ }</span> Config & Code</button>
+      <button class="navbtn" data-page="export"><span class="nav-icon">⇧</span> Export</button>
+    </nav>
+    <div class="project-card">
+      <div class="project-kicker">CURRENT PROJECT</div>
+      <div id="projectTitle" class="project-name">My Custom Mod</div>
+      <div class="project-meta" id="projectMeta">No model imported<br>Unsaved browser project</div>
+      <div class="project-progress"><span id="projectProgress"></span></div>
+    </div>
+  </aside>
+
+  <main>
+    <section class="page active" id="page-scene">
+      <div class="pagehead">
+        <div><div class="eyebrow">01 / EDITOR</div><h1>3D workspace</h1><p>Impor model, cek geometri, lalu atur transformasi sebelum menyusun paket mod.</p></div>
+        <div class="page-actions"><span class="pill" id="modelPill">Belum ada model</span></div>
+      </div>
+      <div class="workspace-grid">
+        <div class="editor-main">
+          <div class="toolbar">
+            <button class="btn primary" id="browseModel"><span>＋</span> Import 3D</button>
+            <input id="modelFile" type="file" multiple accept=".obj,.glb,.gltf,.stl,.bin,.png,.jpg,.jpeg,.webp">
+            <button class="btn" id="browseTexture"><span>▧</span> Add texture</button>
+            <input id="textureFile" type="file" accept="image/png,image/jpeg,image/webp,image/bmp">
+            <button class="btn" id="frameBtn">⌗ Frame</button>
+            <label class="quality-control" for="renderQuality" title="Mengatur resolusi preview saja; geometri ekspor tetap penuh">Preview
+              <select class="input" id="renderQuality" aria-label="Preview quality">
+                <option value="quality">Detail</option>
+                <option value="balanced" selected>Balanced</option>
+                <option value="performance">Performance</option>
+              </select>
+            </label>
+            <button class="btn small layout-toggle" id="layoutToggle" type="button" title="UI layout: Auto / Portrait / Landscape">▤ Auto</button>
+            <div class="gizmo-tools" role="group" aria-label="Gizmo mode">
+              <button class="btn small active" id="gizmoMove" title="Move gizmo (G)">↔ Move</button>
+              <button class="btn small" id="gizmoRotate" title="Rotate gizmo (R)">⟳ Rotate</button>
+              <button class="btn small" id="gizmoScale" title="Scale gizmo (S)">⤢ Scale</button>
+            </div>
+            <span class="grow"></span>
+            <span class="engine-badge" id="engineStatus"><span class="dot" style="background:var(--amber)"></span> Starting 3D engine…</span>
+          </div>
+          <section class="panel">
+            <div class="viewport-wrap" id="dropTarget">
+              <canvas id="viewGrid" aria-hidden="true"></canvas>
+              <canvas id="viewGL" aria-hidden="true"></canvas>
+              <canvas id="view" aria-label="3D model preview"></canvas>
+              <div class="viewport-top-left"><span class="overlay-chip">PERSPECTIVE</span><span class="overlay-chip">GRID / WORLD</span></div>
+              <div class="viewport-top-right"><span class="overlay-chip">Drag · Orbit</span><span class="overlay-chip">Pinch / Scroll · Zoom</span></div>
+              <div class="viewport-face-controls" role="group" aria-label="Face rendering options">
+                <button class="face-toggle active" id="onFaceToggle" type="button" aria-pressed="true" title="On Face: solid surface / wireframe">▰ On Face</button>
+                <button class="face-toggle" id="doubleFaceToggle" type="button" aria-pressed="false" title="Double Face: render front and back sides">◧ Double Face</button>
+              </div>
+              <div class="empty-state" id="emptyState">
+                <div class="empty-box">
+                  <div class="empty-icon">⬡</div>
+                  <div class="empty-title">Start with a 3D model</div>
+                  <div class="empty-copy">Drop file here or import <b>OBJ, GLB, glTF, STL</b>.<br>For a .gltf model, select its companion .bin and texture files together.</div>
+                  <button class="btn primary" id="emptyImport">Choose model files</button>
+                </div>
+              </div>
+            </div>
+            <div class="viewport-foot"><span><span class="keycap">LMB</span> Orbit</span><span><span class="keycap">Wheel</span> Zoom</span><span><span class="keycap">Right drag</span> Pan</span><span class="muted" id="viewportHint" style="margin-left:auto">Gizmo aktif · tarik sumbu untuk mengubah model</span></div>
+          </section>
+          <div class="asset-summary">
+            <div class="stat"><div class="stat-label">Mesh objects</div><div class="stat-value" id="statMeshes">—</div><div class="stat-note">Visible scene</div></div>
+            <div class="stat"><div class="stat-label">Vertices</div><div class="stat-value" id="statVertices">—</div><div class="stat-note">Combined geometry</div></div>
+            <div class="stat"><div class="stat-label">Triangles</div><div class="stat-value" id="statTriangles">—</div><div class="stat-note">Estimated count</div></div>
+          </div>
+          <section class="panel outliner-panel">
+            <div class="panel-head"><div><div class="panel-title">Outliner / EVTS items</div><div class="panel-sub">Pilih mesh untuk mengatur transform, tekstur, dan collider item itu</div></div><span class="pill" id="outlinerCount">0 objects</span></div>
+            <div class="panel-body">
+              <div class="outliner-actions"><button class="btn small" id="selectAllExport">✓ Select all</button><button class="btn small" id="deselectAllExport">− Deselect all</button><span class="muted">Checked = ikut ekspor</span></div>
+              <div id="outlinerList" class="outliner-list"><div class="note">Impor model dengan beberapa mesh untuk melihat daftar objek.</div></div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><div class="panel-title">Scene assets</div><div class="panel-sub">File currently loaded in the viewport</div></div><span class="pill" id="assetType">No asset</span></div>
+            <div class="panel-body" id="assetList"><div class="note">Belum ada file. Tekan <b>Import 3D</b> untuk memulai.</div></div>
+          </section>
+        </div>
+        <aside class="inspector panel">
+          <div class="panel-head"><div><div class="panel-title">Transform inspector</div><div class="panel-sub">Selected model · object-level</div></div><span class="pill">XYZ</span></div>
+          <div class="panel-body">
+            <div class="inspector-section">POSITION</div>
+            <div class="field"><label>Position (X / Y / Z)</label><div class="form-row"><input class="input" id="px" aria-label="Position X" type="number" value="0" step="0.1"><input class="input" id="py" aria-label="Position Y" type="number" value="0" step="0.1"><input class="input" id="pz" aria-label="Position Z" type="number" value="0" step="0.1"></div></div>
+            <div class="sep"></div>
+            <div class="inspector-section">ROTATION · DEGREES</div>
+            <div class="field"><label>Rotation (X / Y / Z)</label><div class="form-row"><input class="input" id="rx" aria-label="Rotation X" type="number" value="0" step="5"><input class="input" id="ry" aria-label="Rotation Y" type="number" value="0" step="5"><input class="input" id="rz" aria-label="Rotation Z" type="number" value="0" step="5"></div></div>
+            <div class="sep"></div>
+            <div class="inspector-section">SCALE</div>
+            <div class="field"><label>Scale (X / Y / Z)</label><div class="form-row"><input class="input" id="sx" aria-label="Scale X" type="number" value="1" min="0.01" step="0.1"><input class="input" id="sy" aria-label="Scale Y" type="number" value="1" min="0.01" step="0.1"><input class="input" id="sz" aria-label="Scale Z" type="number" value="1" min="0.01" step="0.1"></div></div>
+            <button class="btn primary block" id="applyTransform">Apply transform</button>
+            <button class="btn block" id="resetTransform" style="margin-top:7px">Reset values</button>
+            <div class="sep"></div>
+            <div class="note">Gizmo mengikuti mesh terpilih. Transform objek dibake ke OBJ saat ekspor; skala item EVTS adalah properti terpisah.</div>
+            <div class="sep"></div>
+            <div class="inspector-section">OBJECT / OUTLINER</div>
+            <div class="field"><label for="activeObjectName">Scene object name</label><input id="activeObjectName" class="input" value="" maxlength="80" placeholder="Pilih objek"></div>
+            <div class="field"><label for="activeItemName">Nama item EVTS</label><input id="activeItemName" class="input" value="" maxlength="64" placeholder="Nama item dalam game"></div>
+            <div class="field"><label for="activeGroupName">Outliner group</label><input id="activeGroupName" class="input" value="Scene" maxlength="64" placeholder="Scene / Chassis / Interior"></div>
+            <div class="field"><label for="activeParent">Parent object</label><select id="activeParent" class="input"><option value="">Scene root</option></select><div class="field-help">Parent dipakai untuk transform/hierarchy di editor. Pada ekspor Separate, transform dibake; EVTS tidak menyimpan parent-child sebagai rakitan otomatis.</div></div>
+            <label class="check-row full"><input type="checkbox" id="activeExportItem" checked> Include this mesh in export</label>
+            <div class="field"><label for="activeItemScale">EVTS item scale</label><input id="activeItemScale" class="input" type="number" min="0.001" step="0.1" value="1"></div>
+            <div class="sep"></div>
+            <div class="inspector-section">PHYSICS / COLLIDER</div>
+            <div class="field"><label for="activeCollider">Collider profile</label><select id="activeCollider" class="input"><option value="default">Game default (omit field)</option><option value="wheel">Wheel (fixed 3×3)</option><option value="sizable_wheel">Sizable wheel (custom size)</option></select></div>
+            <div id="sizableWheelFields" class="sizable-fields hidden">
+              <div class="field full"><label>Collider size · X / Y / Z</label><div class="form-row"><input class="input" id="collSizeX" type="number" step="0.05" min="0.001" value="3" aria-label="Collider SizeX"><input class="input" id="collSizeY" type="number" step="0.05" min="0.001" value="0.35" aria-label="Collider SizeY"><input class="input" id="collSizeZ" type="number" step="0.05" min="0.001" value="3" aria-label="Collider SizeZ"></div></div>
+              <div class="field full"><label>Collider offset · X / Y / Z</label><div class="form-row"><input class="input" id="collOffsetX" type="number" step="0.05" value="0" aria-label="Collider OffsetX"><input class="input" id="collOffsetY" type="number" step="0.05" value="0" aria-label="Collider OffsetY"><input class="input" id="collOffsetZ" type="number" step="0.05" value="0" aria-label="Collider OffsetZ"></div></div>
+              <div class="field full"><label for="meshOffsetY">Visual mesh offset Y</label><input class="input" id="meshOffsetY" type="number" step="0.05" value="0"></div>
+            </div>
+            <button class="btn primary block" id="applyItemSettings" style="margin-top:8px">Apply item settings</button>
+            <div class="note">EVTS mod schema yang terdokumentasi mendukung field collider “wheel” dan “sizable_wheel”. Pilihan “Game default” tidak menambahkan field collider. Collider box/sphere generik tidak ditawarkan karena belum terverifikasi di schema ini.</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="page" id="page-materials">
+      <div class="pagehead"><div><div class="eyebrow">02 / ASSETS</div><h1>Materials & textures</h1><p>Tambah gambar untuk preview material. Pemasangan UV dan material EVTS tetap perlu diuji dalam game.</p></div><div class="page-actions"><button class="btn primary" id="materialsImport">＋ Add texture</button></div></div>
+      <div class="grid-2">
+        <section class="panel"><div class="panel-head"><div><div class="panel-title">Texture preview</div><div class="panel-sub">Image applied to model preview</div></div><span class="pill" id="textureBadge">No texture</span></div><div class="panel-body"><div id="texturePreviewWrap" class="texture-empty">No texture yet<br><span class="small">Import a JPG, PNG, or WebP image.</span></div><div id="textureFileInfo" class="file-row hidden" style="margin-top:11px"><div class="file-icon">▧</div><div class="file-info"><div class="file-name" id="textureFileName">—</div><div class="file-detail" id="textureFileDetails">—</div></div><button class="btn small ghost" id="removeTexture">Remove</button></div><div class="note" style="margin-top:12px">Tekstur diterapkan ke material mesh untuk preview. UV mapping harus tersedia di model agar gambar tampil dengan benar.</div></div></section>
+        <section class="panel"><div class="panel-head"><div><div class="panel-title">Material pipeline</div><div class="panel-sub">Current browser build</div></div><span class="pill red">Preview stage</span></div><div class="panel-body"><div class="file-row"><div class="file-icon">01</div><div class="file-info"><div class="file-name">Diffuse / base color</div><div class="file-detail">Image texture · JPG / PNG / WebP</div></div><span class="pill" id="diffuseState">Empty</span></div><div class="file-row" style="margin-top:9px"><div class="file-icon">02</div><div class="file-info"><div class="file-name">Normal map</div><div class="file-detail">Planned · not applied in this build</div></div><span class="pill">Planned</span></div><div class="file-row" style="margin-top:9px"><div class="file-icon">03</div><div class="file-info"><div class="file-name">Metallic / roughness</div><div class="file-detail">Planned · not exported as game material</div></div><span class="pill">Planned</span></div><div class="sep"></div><div class="field"><label>Texture filename in package</label><input id="textureOutputName" value="diffuse.png" maxlength="100" readonly><div class="field-help">Nama dibuat otomatis sebagai textures/NamaObjek/diffuse.ext agar tekstur antar-mesh tidak bertabrakan.</div></div><div class="status info">Catatan: OBJ menyimpan geometri dan UV, bukan seluruh material. Profil EVTS untuk texture/material tergantung format mod versi game yang dipakai.</div></div></section>
+      </div>
+    </section>
+
+    <section class="page" id="page-config">
+      <div class="pagehead"><div><div class="eyebrow">03 / CONFIGURATION</div><h1>Config & code</h1><p>Atur metadata melalui form, lalu tinjau atau edit JSON dan Lua. Validasi berjalan sebelum ekspor.</p></div><div class="page-actions"><button class="btn" id="formatJson">Format JSON</button></div></div>
+      <div class="grid-2">
+        <section class="panel"><div class="panel-head"><div><div class="panel-title">Mod details</div><div class="panel-sub">Visual configuration</div></div><span class="pill">Form</span></div><div class="panel-body">
+          <div class="field"><label for="modName">Mod name</label><input id="modName" value="My Custom Mod" maxlength="64"></div>
+          <div class="field"><label for="author">Author</label><input id="author" value="Creator" maxlength="64"></div>
+          <div class="field"><label for="itemName">Item name</label><input id="itemName" value="Custom Part" maxlength="64"></div>
+          <div class="field"><label for="profile">Mod profile</label><select id="profile"><option value="decorative">Decorative / simple block</option><option value="functional">Functional (experimental Lua)</option><option value="wheel">Wheel (experimental)</option></select></div>
+          <div class="field"><label for="itemScale">Item scale</label><input id="itemScale" type="number" min="0.01" step="0.1" value="1"></div>
+          <label class="check-row"><input type="checkbox" id="includeSource"> Include project notes in ZIP</label>
+          <div class="sep"></div><div class="note">UUID dibuat per item/proyek dan dipertahankan saat ekspor ulang. Skema awal mengikuti template komunitas, bukan skema resmi yang dijamin untuk semua versi EVTS.</div>
+        </div></section>
+        <section class="panel"><div class="panel-head"><div><div class="panel-title">Code editor</div><div class="panel-sub">JSON is exported; Lua is included when non-empty</div></div><span class="pill">Source</span></div><div class="panel-body">
+          <div class="code-tabs"><button class="code-tab active" data-code="jsonPane">info.json</button><button class="code-tab" data-code="luaPane">script.lua</button></div>
+          <div class="code-pane active" id="jsonPane"><div class="field"><label for="jsonEditor">info.json</label><textarea id="jsonEditor" class="code-area code-editor" spellcheck="false" autocapitalize="off"></textarea><div class="field-help">Edit JSON manual jika perlu. Jika JSON valid, isi teks ini yang dipakai ketika ekspor.</div></div></div>
+          <div class="code-pane" id="luaPane"><div class="field"><label for="luaCode">Lua script (optional)</label><textarea id="luaCode" class="code-area code-editor" spellcheck="false" autocapitalize="off" placeholder="-- Tulis script yang sesuai dengan API EVTS yang sudah diverifikasi"></textarea><div class="field-help">Script hanya akan disertakan di scripts/main.lua. Aplikasi belum bisa memastikan API Lua yang cocok dengan versi EVTS kamu.</div></div></div>
+        </div></section>
+      </div>
+    </section>
+
+    <section class="page" id="page-export">
+      <div class="pagehead"><div><div class="eyebrow">04 / BUILD & PACKAGE</div><h1>Validate & export</h1><p>Periksa aset, generate file, lalu simpan paket untuk diuji di Evertech Sandbox.</p></div><div class="page-actions"><button class="btn" id="runValidationTop">Run validation</button></div></div>
+      <div class="grid-2">
+        <section class="panel"><div class="panel-head"><div><div class="panel-title">Validation report</div><div class="panel-sub">Structural checks before package generation</div></div><span class="pill" id="validationBadge">Not checked</span></div><div class="panel-body"><div class="status" id="validationReport">Run validation untuk memeriksa model, metadata, JSON, dan referensi tekstur.</div><button class="btn block" id="validateBtn" style="margin-top:10px">Run validation</button></div></section>
+        <section class="panel"><div class="panel-head"><div><div class="panel-title">Package settings</div><div class="panel-sub">Static mesh export</div></div><span class="pill red">Browser</span></div><div class="panel-body"><div class="file-row"><div class="file-icon">▣</div><div class="file-info"><div class="file-name">EvertechMod.zip</div><div class="file-detail">info.json · meshes/ObjectName/ · textures/ObjectName/ · scripts/</div></div><span class="pill">ZIP</span></div><div class="field" style="margin:10px 0"><label for="exportMode">Export mode</label><select id="exportMode" class="input"><option value="separate" selected>Separate items · recommended</option><option value="combined">Combine into one item</option></select><div class="field-help">Separate membuat satu entri simpleblocks per mesh tercentang. Combined menyatukan mesh tercentang ke satu OBJ; hanya satu diffuse texture yang bisa direferensikan pada item gabungan.</div></div><div class="field" style="margin:10px 0"><label for="zipMode">ZIP speed / size</label><select id="zipMode" class="input"><option value="fast" selected>Fast · paling ringan untuk HP</option><option value="balanced">Balanced · ukuran dan kecepatan</option><option value="compact">Smaller ZIP · kompresi lebih berat</option></select><div class="field-help">Fast direkomendasikan untuk model besar atau perangkat mobile. Tekstur PNG/JPG/WebP tidak dikompresi ulang; kompresi ulang biasanya hanya membuang waktu.</div></div><div class="note" style="margin:10px 0 15px">Setiap item memakai satu `info.json` root, mesh OBJ dalam folder bernama objek, tekstur terpisah per objek, UUID unik, dan konfigurasi collider sendiri. Animasi/rigging tidak dipertahankan dalam OBJ statis. Proses menampilkan progres saat menyiapkan tiap mesh dan saat membuat ZIP.</div><button class="btn primary block" id="downloadZip">⇩ Build & download ZIP</button><button class="btn block" id="exportFolder" style="margin-top:8px">▣ Export to folder (supported browsers)</button><div class="status info" id="exportStatus" style="margin-top:12px">Belum ada proses ekspor.</div></div></section>
+      </div>
+      <section class="panel" style="margin-top:14px"><div class="panel-head"><div><div class="panel-title">Output structure</div><div class="panel-sub">Generated in staging before download</div></div></div><div class="panel-body"><div class="file-row"><div class="file-icon">▤</div><div class="file-info"><div class="file-name">info.json</div><div class="file-detail">Mod metadata and item references</div></div></div><div class="file-row" style="margin-top:8px"><div class="file-icon">⬡</div><div class="file-info"><div class="file-name">meshes/ObjectName/ObjectName.obj</div><div class="file-detail">One OBJ per checked mesh; paths referenced from root info.json</div></div></div><div class="file-row" style="margin-top:8px"><div class="file-icon">▧</div><div class="file-info"><div class="file-name">textures/</div><div class="file-detail">Imported texture file, if any</div></div></div><div class="file-row" style="margin-top:8px"><div class="file-icon">&lt;/&gt;</div><div class="file-info"><div class="file-name">scripts/main.lua</div><div class="file-detail">Only created when Lua content is supplied</div></div></div></div></section>
+      <div class="footer">Browser limitation: halaman web tidak dapat dipastikan bisa menulis ke direktori privat aplikasi EVTS di Android. Gunakan ZIP sebagai jalur utama; instalasi perlu dilakukan melalui pengelola file dan mengikuti izin Android. Struktur mod final tetap harus diuji di game.</div>
+    </section>
+
+    <div class="footer">Evertech Mod Studio v0.7 · responsive staged export, per-item EVTS settings, and ZIP compression profiles. Biarkan halaman terbuka selama ekspor. Model dan tekstur diproses lokal di browser; parser 3D dan ZIP library disertakan tanpa CDN.</div>
+  </main>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script src="vendor/jszip.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

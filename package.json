@@ -1,0 +1,14 @@
+{
+  "name": "evertech-mod-studio",
+  "version": "0.7.0",
+  "private": false,
+  "description": "Browser-based experimental editor and exporter for Evertech Sandbox mod assets",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/check-project.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
